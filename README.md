@@ -1,8 +1,6 @@
 <p align="center">
-<h1 align="center"><strong> OmniMap: A General Mapping Framework Integrating Optics, Geometry, and Semantics</strong></h1>
+<h1 align="center"><strong> OmniMap: A Comprehensive Mapping Framework Integrating Optics, Geometry, and Semantics</strong></h1>
 </p>
-
-
 
 <p align="center">
   <a href="https://omni-map.github.io/" target='_blank'>
@@ -10,15 +8,15 @@
   </a>
 </p>
 
+## 🏠 Abstract
 
- ## 🏠  Abstract
-Robotic systems demand accurate and comprehensive 3D environment perception, requiring simultaneous capture of a comprehensive representation of photo-realistic appearance (optical), precise layout shape (geometric), and open-vocabulary scene understanding (semantic). Existing methods typically achieve only partial fulfillment of these requirements while exhibiting optical blurring, geometric irregularities, and semantic ambiguities. To address these challenges, we propose OmniMap. Overall, OmniMap represents the first online mapping framework that simultaneously captures optical, geometric, and semantic scene attributes while maintaining real-time performance and model compactness. At the architectural level, OmniMap employs a tightly coupled 3DGS–Voxel hybrid representation that combines fine-grained modeling with structural stability. At the implementation level, OmniMap identifies key challenges across different modalities and introduces several innovations: adaptive camera modeling for motion blur and exposure compensation, hybrid incremental representation with normal constraints, and probabilistic fusion for robust instance-level understanding. Extensive experiments show OmniMap’s superior performance in rendering fidelity, geometric accuracy, and zero-shot semantic segmentation compared to state-of-the-art methods across diverse scenes. The framework’s versatility is further evidenced through a variety of downstream applications including multi-domain scene Q&A, interactive edition, perception-guided manipulation, and map-assisted navigation.
+Robotic systems demand accurate and comprehensive 3D environment perception, requiring simultaneous capture of a comprehensive representation of photo-realistic appearance (optical), precise layout shape (geometric), and open-vocabulary scene understanding (semantic). Existing methods typically achieve only partial fulfillment of these requirements while exhibiting optical blurring, geometric irregularities, and semantic ambiguities. To address these challenges, we propose OmniMap. Overall, OmniMap represents the first online mapping framework that simultaneously captures optical, geometric, and semantic scene attributes while maintaining real-time performance and model compactness. At the architectural level, OmniMap employs a tightly coupled 3DGS–Voxel hybrid representation that combines fine-grained modeling with structural stability. At the implementation level, OmniMap identifies key challenges across different modalities and introduces several innovations: adaptive camera modeling for motion blur and exposure compensation, hybrid incremental representation with normal constraints, and probabilistic fusion for robust instance-level understanding. Extensive experiments show OmniMap's superior performance in rendering fidelity, geometric accuracy, and zero-shot semantic segmentation compared to state-of-the-art methods across diverse scenes. The framework's versatility is further evidenced through a variety of downstream applications including multi-domain scene Q&A, interactive edition, perception-guided manipulation, and map-assisted navigation.
 
 <img src="https://omnimap123.github.io/static/images/poster.png">
 
+## 🛠 Install
 
-
-## 🛠  Install
+Tested on Ubuntu 20.04/24.04 with CUDA 11.8.
 
 ### Clone this repo
 
@@ -28,62 +26,133 @@ cd anonymous_code
 ```
 
 ### Install the required libraries
-Use conda to install the required environment. To avoid problems, it is recommended to follow the instructions below to set up the environment.
-
 
 ```bash
-conda env create -f environment.yml
+conda env create -f environment.yaml
 conda activate omnimap
 ```
 
-###  Install YOLO-World Model
-Follow the [instructions](https://github.com/AILab-CVC/YOLO-World#1-installation) to install the YOLO-World model and download the pretrained weights [YOLO-Worldv2-L (CLIP-Large)](https://huggingface.co/wondervictor/YOLO-World/blob/main/yolo_world_v2_l_clip_large_o365v1_goldg_pretrain_800ft-9df82e55.pth).
+### Install torch-scatter
 
-###  Install TAP Model
-Follow the [instructions](https://github.com/baaivision/tokenize-anything?tab=readme-ov-file#installation) to install the TAP model and download the pretrained weights [here](https://github.com/baaivision/tokenize-anything?tab=readme-ov-file#models).
+```bash
+pip install torch-scatter -f https://data.pyg.org/whl/torch-2.1.2+cu118.html
+```
 
+### Install thirdparty components
 
-###  Install SBERT Model
+```bash
+pip install --no-build-isolation thirdparty/simple-knn
+pip install --no-build-isolation thirdparty/diff-gaussian-rasterization
+pip install --no-build-isolation thirdparty/lietorch
+```
+
+### Install YOLO-World Model
+
+```bash
+cd ..
+git clone --recursive https://github.com/AILab-CVC/YOLO-World.git
+cd YOLO-World
+pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cu118/torch2.1/index.html
+pip install -r <(grep -v "opencv-python" requirements/basic_requirements.txt)
+pip install -e .
+cd ../omnimap
+```
+
+If `pip install -e .` fails, try: `pip install --no-build-isolation -e .`
+
+**Fix YOLO-World syntax error:** In `YOLO-World/yolo_world/models/detectors/yolo_world.py` line 61, replace:
+```python
+self.text_feats, None = self.backbone.forward_text(texts)
+```
+with:
+```python
+self.text_feats, _ = self.backbone.forward_text(texts)
+```
+
+Download pretrained weights [YOLO-Worldv2-L (CLIP-Large)](https://huggingface.co/wondervictor/YOLO-World/blob/main/yolo_world_v2_l_clip_large_o365v1_goldg_pretrain_800ft-9df82e55.pth) to `weights/yolo-world/`.
+
+### Install TAP Model
+
+```bash
+pip install flash-attn==2.5.8 --no-build-isolation
+pip install git+https://github.com/baaivision/tokenize-anything.git
+```
+
+Download pretrained weights to `weights/tokenize-anything/`:
+- [tap_vit_l_v1_1.pkl](https://huggingface.co/BAAI/tokenize-anything/resolve/main/models/tap_vit_l_v1_1.pkl)
+- [merged_2560.pkl](https://huggingface.co/BAAI/tokenize-anything/resolve/main/models/merged_2560.pkl)
+
+### Install SBERT Model
+
 ```bash
 pip install -U sentence-transformers
 ```
-Download pretrained weights
+
+Download pretrained weights to `weights/sbert/`:
 ```bash
+cd weights/sbert
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+```
+
+### Install additional dependencies
+
+```bash
+pip install --no-build-isolation git+https://github.com/lvis-dataset/lvis-api.git
+python -m spacy download en_core_web_sm
+```
+
+### Download YOLO-World data files
+
+```bash
+mkdir -p data/coco/lvis && cd data/coco/lvis
+wget https://huggingface.co/GLIPModel/GLIP/resolve/main/lvis_v1_minival_inserted_image_name.json
+cd ../../..
+cp -r ../YOLO-World/data/texts data/
 ```
 
 ### Modify the model path
 
-Change the address of the above model in the configuration file in ```omnimap/config/```.
+Change the address of the above models in the configuration file in `config/`.
+
+### Verify installation
+
+```bash
+python -c "import torch; import mmcv; import mmdet; from tokenize_anything import model_registry; print('Setup complete!')"
+```
 
 ## 📊 Prepare dataset
-OmniMap has completed validation on Replica (as same with [vMap](https://github.com/kxhit/vMAP)) and Scannet. 
-Please download the following datasets.
+
+OmniMap has completed validation on Replica (as same with [vMap](https://github.com/kxhit/vMAP)) and ScanNet. Please download the following datasets.
 
 * [Replica Demo](https://huggingface.co/datasets/kxic/vMAP/resolve/main/demo_replica_room_0.zip) - Replica Room 0 only for faster experimentation.
 * [Replica](https://huggingface.co/datasets/kxic/vMAP/resolve/main/vmap.zip) - All Pre-generated Replica sequences.
 * [ScanNet](https://github.com/ScanNet/ScanNet) - Official ScanNet sequences.
 
-
+Update the dataset path in `config/replica_config.yaml` or `config/scannet_config.yaml`:
+```yaml
+path:
+  data_path: /path/to/your/dataset
+```
 
 ## 🏃 Run
 
-
 ### Main Code
+
 Run the following command to start the formal execution of the incremental mapping.
 
 ```bash
 # for replica
-python demo.py  --dataset replica --scene {scene} --vis_gui
+python demo.py --dataset replica --scene {scene} --vis_gui
 # for scannet
-python main.py  --dataset scannet --scene {scene} --vis_gui
+python main.py --dataset scannet --scene {scene} --vis_gui
 ```
 
-You can use ```--start {start_id}``` and ```--length {length}``` to specify the starting frame ID and the mapping duration, respectively. The ```--vis_gui``` flag controls online visualization; disabling it may improve processing speed.
+You can use `--start {start_id}` and `--length {length}` to specify the starting frame ID and the mapping duration, respectively. The `--vis_gui` flag controls online visualization; disabling it may improve processing speed.
 
-After building the map, the results will be saved in folder ```outputs/{scene}```, which contains the rendered outputs and evaluation metrics.
+After building the map, the results will be saved in folder `outputs/{scene}`, which contains the rendered outputs and evaluation metrics.
 
 ### Gen 3D Mesh
+
 We use the rendered depth and color images to generate the color mesh. You can run the following code to perform this operation.
 
 ```bash
@@ -93,14 +162,13 @@ python tsdf_integrate.py --dataset replica --scene {scene}
 python tsdf_integrate.py --dataset scannet --scene {scene}
 ```
 
-
 ## 🔗 Citation
 
 If you find our work helpful, please cite:
 
 ```bibtex
 @article{omnimap,
-  title={OmniMap: A General Mapping Framework Integrating Optics, Geometry, and Semantics},
+  title={OmniMap: A Comprehensive Mapping Framework Integrating Optics, Geometry, and Semantics},
   author={Deng, Yinan and Yue, Yufeng and Dou, Jianyu and Zhao, Jingyu and Wang, Jiahui and Tang, Yujie and Yang, Yi and Fu, Mengyin},
   journal={IEEE Transactions on Robotics},
   year={2025}
@@ -108,5 +176,5 @@ If you find our work helpful, please cite:
 ```
 
 ## 👏 Acknowledgements
-We would like to express our gratitude to the open-source projects and their contributors [HI-SLAM2](https://github.com/Willyzw/HI-SLAM2). 
-Their valuable work has greatly contributed to the development of our codebase.
+
+We would like to express our gratitude to the open-source projects and their contributors [HI-SLAM2](https://github.com/Willyzw/HI-SLAM2), [3D Gaussian Splatting](https://github.com/graphdeco-inria/gaussian-splatting), [YOLO-World](https://github.com/AILab-CVC/YOLO-World), and [TAP](https://github.com/baaivision/tokenize-anything). Their valuable work has greatly contributed to the development of our codebase.
