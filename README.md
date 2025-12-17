@@ -38,6 +38,24 @@ conda activate omnimap
 pip install torch-scatter -f https://data.pyg.org/whl/torch-2.1.2+cu118.html
 ```
 
+### Set CUDA environment
+
+Run this every time before using the environment, or add to conda activation script:
+
+```bash
+export CUDA_HOME=$CONDA_PREFIX
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib:$LD_LIBRARY_PATH
+```
+
+To make it permanent, add to conda activate script:
+```bash
+mkdir -p $CONDA_PREFIX/etc/conda/activate.d
+echo 'export CUDA_HOME=$CONDA_PREFIX
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib:$LD_LIBRARY_PATH' > $CONDA_PREFIX/etc/conda/activate.d/cuda_env.sh
+```
+
 ### Install thirdparty components
 
 ```bash
