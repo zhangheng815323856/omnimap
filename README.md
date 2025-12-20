@@ -21,8 +21,8 @@ Tested on Ubuntu 20.04/24.04 with CUDA 11.8.
 ### Clone this repo
 
 ```bash
-git clone https://github.com/omnimap123/anonymous_code.git
-cd anonymous_code
+git clone https://github.com/BIT-DYN/omnimap.git
+cd omnimap
 ```
 
 ### Install the required libraries
