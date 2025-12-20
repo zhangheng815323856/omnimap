@@ -64,6 +64,8 @@ pip install --no-build-isolation thirdparty/diff-gaussian-rasterization
 pip install --no-build-isolation thirdparty/lietorch
 ```
 
+**Note:** The `mmyolo` package has been copied from YOLO-World repository into `thirdparty/mmyolo/` to resolve a dependency conflict. The original YOLO-World had a version constraint that prevented using mmcv versions newer than 2.0.0, but this project requires mmcv 2.1.0. This issue has been fixed in the local copy.
+
 ### Install YOLO-World Model
 
 ```bash
@@ -72,11 +74,9 @@ git clone --recursive https://github.com/AILab-CVC/YOLO-World.git
 cd YOLO-World
 pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cu118/torch2.1/index.html
 pip install -r <(grep -v "opencv-python" requirements/basic_requirements.txt)
-pip install -e .
+pip install -e . --no-build-isolation
 cd ../omnimap
 ```
-
-If `pip install -e .` fails, try: `pip install --no-build-isolation -e .`
 
 **Fix YOLO-World syntax error:** In `YOLO-World/yolo_world/models/detectors/yolo_world.py` line 61, replace:
 ```python
@@ -104,7 +104,10 @@ Download pretrained weights to `weights/tokenize-anything/`:
 
 ```bash
 pip install -U sentence-transformers
+pip install transformers==4.36.2
 ```
+
+**Note:** If you see `sentence-transformers 5.2.0 has requirement transformers<6.0.0,>=4.41.0, but you have transformers 4.36.2.` just skip it - it's okay.
 
 Download pretrained weights to `weights/sbert/`:
 ```bash
@@ -121,6 +124,8 @@ python -m spacy download en_core_web_sm
 
 ### Download YOLO-World data files
 
+(This part is unnecessary because data folder already exists with all required scripts)
+
 ```bash
 mkdir -p data/coco/lvis && cd data/coco/lvis
 wget https://huggingface.co/GLIPModel/GLIP/resolve/main/lvis_v1_minival_inserted_image_name.json
@@ -132,11 +137,31 @@ cp -r ../YOLO-World/data/texts data/
 
 Change the address of the above models in the configuration file in `config/`.
 
+### Reinstall mmcv:
+
+(some packages may change your mmcv version, please reinstall mmcv and check if it's version is 2.1.0)
+
+```bash
+pip install mmcv==2.1.0 -f https://download.openmmlab.com/mmcv/dist/cu118/torch2.1/index.html
+```
+
+### Fix transformers version compatibility:
+
+If you encounter `AttributeError: module 'torch.utils._pytree' has no attribute 'register_pytree_node'`, install the compatible version of transformers:
+
+```bash
+pip install transformers==4.36.2
+```
+
+This version is compatible with PyTorch 2.1.2. Newer versions of transformers require PyTorch 2.2+.
+
 ### Verify installation
 
 ```bash
-python -c "import torch; import mmcv; import mmdet; from tokenize_anything import model_registry; print('Setup complete!')"
+python -c "import torch; import mmcv; import mmdet; from tokenize_anything import model_registry; print('Setup complete')"
 ```
+
+**Note:**: You may get the ERROR: `AssertionError: MMCV==2.2.0 is used but incompatible. Please install mmcv>=2.0.0rc4, <2.1.0.`. If so - just go to `__init__.py` and change `mmcv_maximum_version` to `2.2.0`.
 
 ## 📊 Prepare dataset
 
@@ -162,10 +187,20 @@ Run the following command to start the formal execution of the incremental mappi
 # for replica
 python demo.py --dataset replica --scene {scene} --vis_gui
 # for scannet
-python main.py --dataset scannet --scene {scene} --vis_gui
+python demo.py --dataset scannet --scene {scene} --vis_gui
 ```
 
 You can use `--start {start_id}` and `--length {length}` to specify the starting frame ID and the mapping duration, respectively. The `--vis_gui` flag controls online visualization; disabling it may improve processing speed.
+
+### Examples:
+
+```bash
+# Replica
+python demo.py --dataset replica --scene room_0
+
+# ScanNet
+python main.py --dataset scannet --scene scene0000_00
+```
 
 After building the map, the results will be saved in folder `outputs/{scene}`, which contains the rendered outputs and evaluation metrics.
 
@@ -178,6 +213,29 @@ We use the rendered depth and color images to generate the color mesh. You can r
 python tsdf_integrate.py --dataset replica --scene {scene}
 # for scannet
 python tsdf_integrate.py --dataset scannet --scene {scene}
+```
+
+## Project Structure
+
+```
+omnimap/
+├── config/
+│   ├── replica_config.yaml
+│   ├── scannet_config.yaml
+│   └── yolo-world/
+├── data/
+│   ├── coco/lvis/
+│   └── texts/
+├── weights/
+│   ├── yolo-world/
+│   ├── tokenize-anything/
+│   └── sbert/
+├── thirdparty/
+│   ├── simple-knn/
+│   ├── diff-gaussian-rasterization/
+│   ├── lietorch/
+│   └── mmyolo/
+└── demo.py
 ```
 
 ## 🔗 Citation
